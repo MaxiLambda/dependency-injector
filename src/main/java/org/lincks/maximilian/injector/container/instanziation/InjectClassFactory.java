@@ -30,8 +30,10 @@ public class InjectClassFactory {
             return annotatedConstructors.get(0);
         }
     }
-
     public static <T> T createInstance(Class<T> clazz) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+        return createInstance(clazz, "");
+    }
+    public static <T> T createInstance(Class<T> clazz, String identifier) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor<T> constructor = getInjectConstructor(clazz);
 
         List<Type> paramTypes = List.of(constructor.getGenericParameterTypes());
@@ -42,7 +44,7 @@ public class InjectClassFactory {
         if(!allParamsInjectable) throw new NotAllParametersInjectableException(clazz);
 
         Object[] params = paramTypes.stream()
-                .map(IoCContainer::resolve)
+                .map(type -> IoCContainer.resolve(type,identifier))
                 .toArray();
         return constructor.newInstance(params);
     }
