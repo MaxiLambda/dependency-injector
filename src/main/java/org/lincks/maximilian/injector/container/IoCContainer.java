@@ -27,8 +27,7 @@ public class IoCContainer {
     private static List<Class<?>> injectables;
 
     private static final Logger log = LoggerFactory.getLogger(IoCContainer.class);
-    private IoCContainer() {
-    }
+    private IoCContainer() {}
 
     public static void initialize(List<String> paths) {
         injectables = paths.stream()
@@ -46,18 +45,40 @@ public class IoCContainer {
         classMap.put(clazz, value);
     }
 
-    public static <T> T resolve(Class<T> clazz) {
-        if (classMap.containsKey(clazz)) return classMap.get(clazz);
+    private static <T> void bind(Type clazz, T value) {
+        classMap.put(clazz, value);
+    }
 
+    public static <T> T resolve(Class<T> clazz) {
         List<Class<T>> injects = findAllMatching(clazz);
 
+        return resolveInternal(injects,clazz);
+    }
+
+    public static <T> T resolve(Class<T> clazz, String identifier) {
+        List<Class<T>> injects = findAllMatching(clazz, identifier);
+
+        return resolveInternal(injects,clazz, identifier);
+    }
+
+    public static <T> T resolve(Type clazz, String identifier){
+        List<Class<T>> injects = findAllMatching(clazz, identifier);
+
+        return resolveInternal(injects, clazz);
+    }
+    private static <T> T resolveInternal(List<Class<T>> injects, Type clazz){
+        return resolveInternal(injects, clazz, "");
+    }
+
+    private static <T> T resolveInternal(List<Class<T>> injects, Type clazz, String identifier){
+        if (classMap.containsKey(clazz)) return classMap.get(clazz);
         if (injects.isEmpty()) throw new NoMatchingInjectableFoundException(clazz);
-        //TODO add Handling for classes with identifiers
+
         if (injects.size() > 1) throw new TooManyInjectablesFoundException(clazz);
 
         T value;
         try {
-            value = InjectClassFactory.createInstance(injects.get(0));
+            value = InjectClassFactory.createInstance(injects.get(0), identifier);
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new InstanceCreationException(e);
         }
@@ -65,18 +86,6 @@ public class IoCContainer {
         bind(clazz, value);
         return value;
     }
-
-    public static <T> T resolve(Type clazz){
-        List<Class<T>> injects = findAllMatching(clazz);
-
-        if (injects.isEmpty()) throw new NoMatchingInjectableFoundException(clazz);
-        //TODO add Handling for classes with identifiers
-        if (injects.size() > 1) throw new TooManyInjectablesFoundException(clazz);
-
-        return resolve(injects.get(0));
-    }
-
-
     public static boolean isInjectable(Type clazz) {
         return !findAllMatching(clazz).isEmpty();
     }
@@ -88,6 +97,16 @@ public class IoCContainer {
                 .toList();
     }
 
+    private static <T> List<Class<T>> findAllMatching(Class<T> clazz, String identifier) {
+        return injectables.stream()
+                .filter(clazz::isAssignableFrom)
+                .filter(c -> c.getAnnotation(Injectable.class)
+                        .identifier()
+                        .startsWith(identifier))
+                .map(c -> ((Class<T>) c))
+                .toList();
+    }
+
     private static <T> List<Class<T>> findAllMatching(Type clazz) {
         Predicate<Class<?>> p = c ->
                 c.equals(clazz) ||
@@ -95,6 +114,18 @@ public class IoCContainer {
                         SuperTypeChecker.getGenericSuperTypes(c).contains(clazz);
         return injectables.stream()
                 .filter(p)
+                .map(c -> ((Class<T>) c))
+                .toList();
+    }
+
+    private static <T> List<Class<T>> findAllMatching(Type clazz, String identifier) {
+        Predicate<Class<?>> p = c ->
+                c.equals(clazz) ||
+                        List.of(c.getGenericInterfaces()).contains(clazz) ||
+                        SuperTypeChecker.getGenericSuperTypes(c).contains(clazz);
+        return injectables.stream()
+                .filter(p)
+                .filter(c -> c.getAnnotation(Injectable.class).identifier().endsWith(identifier))
                 .map(c -> ((Class<T>) c))
                 .toList();
     }
