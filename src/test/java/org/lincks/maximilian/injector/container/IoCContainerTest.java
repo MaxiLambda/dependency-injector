@@ -3,8 +3,7 @@ package org.lincks.maximilian.injector.container;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import test.identifiers.DependOnInteger3;
-import test.identifiers.DependOnString2;
+import test.identifiers.*;
 
 import java.util.List;
 
@@ -16,8 +15,17 @@ class IoCContainerTest {
     }
 
     @Test
-    void resolve() {
-        Assertions.assertEquals(3,IoCContainer.resolve(DependOnInteger3.class).t.getNumber());
-        Assertions.assertEquals(2,IoCContainer.resolve(DependOnString2.class,"2").t.getNumber());
+    void resolveGenericInterfaceWithWildcardIdentifier() {
+        Assertions.assertEquals(Injectable3.class,IoCContainer.resolve(DependOnInteger3.class).t.getClass());
+    }
+
+    @Test
+    void resolveGenericInterfaceWithCustomIdentifier() {
+        Assertions.assertEquals(Injectable2.class,IoCContainer.resolve(DependOnString2.class,"2").t.getClass());
+    }
+
+    @Test
+    void resolveGenericInterfaceWithSetIdentifier() {
+        Assertions.assertEquals(SomeAA.class, IoCContainer.resolve(SomeAAA.class).t.getClass());
     }
 }

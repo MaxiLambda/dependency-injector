@@ -52,7 +52,7 @@ public class IoCContainer {
     public static <T> T resolve(Class<T> clazz) {
         List<Class<T>> injects = findAllMatching(clazz);
 
-        return resolveInternal(injects,clazz);
+        return resolveInternal(injects,clazz,clazz.getAnnotation(Injectable.class).identifier());
     }
 
     public static <T> T resolve(Class<T> clazz, String identifier) {
@@ -64,17 +64,14 @@ public class IoCContainer {
     public static <T> T resolve(Type clazz, String identifier){
         List<Class<T>> injects = findAllMatching(clazz, identifier);
 
-        return resolveInternal(injects, clazz);
-    }
-    private static <T> T resolveInternal(List<Class<T>> injects, Type clazz){
-        return resolveInternal(injects, clazz, "");
+        return resolveInternal(injects, clazz, identifier);
     }
 
     private static <T> T resolveInternal(List<Class<T>> injects, Type clazz, String identifier){
         if (classMap.containsKey(clazz)) return classMap.get(clazz);
         if (injects.isEmpty()) throw new NoMatchingInjectableFoundException(clazz);
 
-        if (injects.size() > 1) throw new TooManyInjectablesFoundException(clazz);
+        if (injects.size() > 1) throw new TooManyInjectablesFoundException(clazz, injects);
 
         T value;
         try {
@@ -125,7 +122,7 @@ public class IoCContainer {
                         SuperTypeChecker.getGenericSuperTypes(c).contains(clazz);
         return injectables.stream()
                 .filter(p)
-                .filter(c -> c.getAnnotation(Injectable.class).identifier().endsWith(identifier))
+                .filter(c -> identifier.startsWith(c.getAnnotation(Injectable.class).identifier()))
                 .map(c -> ((Class<T>) c))
                 .toList();
     }

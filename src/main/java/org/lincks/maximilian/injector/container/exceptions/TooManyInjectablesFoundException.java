@@ -1,13 +1,14 @@
 package org.lincks.maximilian.injector.container.exceptions;
 
 import java.lang.reflect.Type;
+import java.util.List;
 
 public class TooManyInjectablesFoundException extends RuntimeException {
-    public TooManyInjectablesFoundException(Type type){
-        super("Too many Injectable Objects found for Type %s".formatted(type));
+    public <T> TooManyInjectablesFoundException(Type type, List<Class<T>> list){
+        super("Too many Injectable Objects found for Type %s: %s".formatted(type, list));
     }
 
-    public TooManyInjectablesFoundException(Class<?> clazz){
-        super("Too many Injectable Objects found for Class %s".formatted(clazz));
+    public <T> TooManyInjectablesFoundException(Class<?> clazz, List<Class<T>> list){
+        super("Too many Injectable Objects found for Class %s: %s".formatted(clazz, list));
     }
 }
