@@ -3,11 +3,11 @@ package test.identifiers;
 
 import org.lincks.maximilian.injector.annotations.Injectable;
 
-@Injectable(identifier = "AAA")
+@Injectable(identifier = "A.A")
 public
-class SomeAAA {
+class DependsOnAA {
     public TestInterface<Boolean> t;
-    public SomeAAA(TestInterface<Boolean> t){
+    public DependsOnAA(TestInterface<Boolean> t){
         this.t = t;
     }
 }

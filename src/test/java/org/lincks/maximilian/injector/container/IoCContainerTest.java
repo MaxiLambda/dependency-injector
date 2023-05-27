@@ -26,6 +26,6 @@ class IoCContainerTest {
 
     @Test
     void resolveGenericInterfaceWithSetIdentifier() {
-        Assertions.assertEquals(SomeAA.class, IoCContainer.resolve(SomeAAA.class).t.getClass());
+        Assertions.assertEquals(SomeAABC.class, IoCContainer.resolve(DependsOnAA.class).t.getClass());
     }
 }
