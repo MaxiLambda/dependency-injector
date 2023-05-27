@@ -43,7 +43,7 @@ public class App {
 
 You can pass an identifier to the @Injectable annotation. This identifier will be used to determine which injectables
 should be used to create instances of the injectable. In the example below Injectable2 instances are created with
-SomeImplementation1 instances because the identifier of Injectable2 starts with the full identifier of SomeImplementation1.
+SomeImplementation1 instances because the identifier of SomeImplementation1 starts with the full identifier of Injectable2.
 
 ```java
 import org.lincks.maximilian.injector.annotations.Injectable;
@@ -60,12 +60,12 @@ public class Injectable2 {
     }
 }
 
-@Injectable(identifier = "my")
+@Injectable(identifier = "my-test-quick")
 public class SomeImplementation1 {
     //...
 }
 
-@Injectable(identifier = "some-other")
+@Injectable(identifier = "my-cool-function")
 public class SomeImplementation2 {
     //...
 }
