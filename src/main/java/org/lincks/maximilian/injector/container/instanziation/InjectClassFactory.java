@@ -13,9 +13,10 @@ import java.util.List;
 
 public class InjectClassFactory {
 
-    private InjectClassFactory(){}
+    private InjectClassFactory() {
+    }
 
-    public static <T> Constructor<T> getInjectConstructor(Class<T> clazz){
+    public static <T> Constructor<T> getInjectConstructor(Class<T> clazz) {
         List<Constructor<T>> constructors = List.of((Constructor<T>[]) clazz.getDeclaredConstructors());
         if (constructors.size() == 1) {
             return constructors.get(0);
@@ -23,16 +24,18 @@ public class InjectClassFactory {
             List<Constructor<T>> annotatedConstructors = constructors.stream()
                     .filter(constructor -> constructor.isAnnotationPresent(Inject.class))
                     .toList();
-            if(annotatedConstructors.size() > 1) throw
+            if (annotatedConstructors.size() > 1) throw
                     new TooManyInjectConstructorsException(clazz);
-            if(annotatedConstructors.isEmpty()) throw
+            if (annotatedConstructors.isEmpty()) throw
                     new TooManyConstructorsNoneWithInjectExcption(clazz);
             return annotatedConstructors.get(0);
         }
     }
+
     public static <T> T createInstance(Class<T> clazz) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         return createInstance(clazz, "");
     }
+
     public static <T> T createInstance(Class<T> clazz, String identifier) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor<T> constructor = getInjectConstructor(clazz);
 
@@ -41,10 +44,10 @@ public class InjectClassFactory {
         boolean allParamsInjectable = paramTypes.stream()
                 .allMatch(IoCContainer::isInjectable);
 
-        if(!allParamsInjectable) throw new NotAllParametersInjectableException(clazz);
+        if (!allParamsInjectable) throw new NotAllParametersInjectableException(clazz);
 
         Object[] params = paramTypes.stream()
-                .map(type -> IoCContainer.resolve(type,identifier))
+                .map(type -> IoCContainer.resolve(type, identifier))
                 .toArray();
         return constructor.newInstance(params);
     }

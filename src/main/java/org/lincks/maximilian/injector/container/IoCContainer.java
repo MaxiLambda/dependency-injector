@@ -24,10 +24,11 @@ import static org.reflections.scanners.Scanners.TypesAnnotated;
 public class IoCContainer {
 
     private static final ClassMap classMap = new ClassMap();
+    private static final Logger log = LoggerFactory.getLogger(IoCContainer.class);
     private static List<Class<?>> injectables;
 
-    private static final Logger log = LoggerFactory.getLogger(IoCContainer.class);
-    private IoCContainer() {}
+    private IoCContainer() {
+    }
 
     public static void initialize(List<String> paths) {
         injectables = paths.stream()
@@ -37,37 +38,38 @@ public class IoCContainer {
                 .distinct()
                 .toList();
 
-        String injectablesAsString = String.join("\n",injectables.stream().map(Class::toString).toList());
+        String injectablesAsString = String.join("\n", injectables
+                .stream()
+                .map(Class::toString)
+                .toList());
         log.info(injectablesAsString);
     }
 
-    public static <T> void bind(Class<T> clazz, T value) {
-        classMap.put(clazz, value);
-    }
-
-    private static <T> void bind(Type clazz, T value) {
+    public static <T> void bind(Type clazz, T value) {
         classMap.put(clazz, value);
     }
 
     public static <T> T resolve(Class<T> clazz) {
-        List<Class<T>> injects = findAllMatching(clazz);
-
-        return resolveInternal(injects,clazz,clazz.getAnnotation(Injectable.class).identifier());
+        return resolve(clazz, clazz.getAnnotation(Injectable.class).identifier());
     }
 
     public static <T> T resolve(Class<T> clazz, String identifier) {
-        List<Class<T>> injects = findAllMatching(clazz, identifier);
-
-        return resolveInternal(injects,clazz, identifier);
-    }
-
-    public static <T> T resolve(Type clazz, String identifier){
-        List<Class<T>> injects = findAllMatching(clazz, identifier);
+        List<Class<T>> injects = findAllMatchingWithIdentifier(clazz, identifier);
 
         return resolveInternal(injects, clazz, identifier);
     }
 
-    private static <T> T resolveInternal(List<Class<T>> injects, Type clazz, String identifier){
+    public static <T> T resolve(Type clazz) {
+        return resolve(clazz, "");
+    }
+
+    public static <T> T resolve(Type clazz, String identifier) {
+        List<Class<T>> injects = findAllMatchingWithIdentifier(clazz, identifier);
+
+        return resolveInternal(injects, clazz, identifier);
+    }
+
+    private static <T> T resolveInternal(List<Class<T>> injects, Type clazz, String identifier) {
         if (classMap.containsKey(clazz)) return classMap.get(clazz);
         if (injects.isEmpty()) throw new NoMatchingInjectableFoundException(clazz);
 
@@ -83,18 +85,12 @@ public class IoCContainer {
         bind(clazz, value);
         return value;
     }
+
     public static boolean isInjectable(Type clazz) {
-        return !findAllMatching(clazz).isEmpty();
+        return !findAllMatchingIgnoringIdentifier(clazz).isEmpty();
     }
 
-    private static <T> List<Class<T>> findAllMatching(Class<T> clazz) {
-        return injectables.stream()
-                .filter(clazz::isAssignableFrom)
-                .map(c -> ((Class<T>) c))
-                .toList();
-    }
-
-    private static <T> List<Class<T>> findAllMatching(Class<T> clazz, String identifier) {
+    private static <T> List<Class<T>> findAllMatchingWithIdentifier(Class<T> clazz, String identifier) {
         return injectables.stream()
                 .filter(clazz::isAssignableFrom)
                 .filter(c -> c.getAnnotation(Injectable.class)
@@ -104,25 +100,25 @@ public class IoCContainer {
                 .toList();
     }
 
-    private static <T> List<Class<T>> findAllMatching(Type clazz) {
-        Predicate<Class<?>> p = c ->
+    private static Predicate<Class<?>> isAssignableToPredicate(Type clazz) {
+        return c ->
                 c.equals(clazz) ||
                         List.of(c.getGenericInterfaces()).contains(clazz) ||
                         SuperTypeChecker.getGenericSuperTypes(c).contains(clazz);
+    }
+
+    private static <T> List<Class<T>> findAllMatchingIgnoringIdentifier(Type clazz) {
         return injectables.stream()
-                .filter(p)
+                .filter(isAssignableToPredicate(clazz))
                 .map(c -> ((Class<T>) c))
                 .toList();
     }
 
-    private static <T> List<Class<T>> findAllMatching(Type clazz, String identifier) {
-        Predicate<Class<?>> p = c ->
-                c.equals(clazz) ||
-                        List.of(c.getGenericInterfaces()).contains(clazz) ||
-                        SuperTypeChecker.getGenericSuperTypes(c).contains(clazz);
+    private static <T> List<Class<T>> findAllMatchingWithIdentifier(Type clazz, String identifier) {
+
         return injectables.stream()
-                .filter(p)
-                .filter(c -> identifier.startsWith(c.getAnnotation(Injectable.class).identifier()))
+                .filter(isAssignableToPredicate(clazz))
+                .filter(c -> c.getAnnotation(Injectable.class).identifier().startsWith(identifier))
                 .map(c -> ((Class<T>) c))
                 .toList();
     }
